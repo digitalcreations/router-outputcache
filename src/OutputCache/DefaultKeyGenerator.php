@@ -17,7 +17,7 @@ class DefaultKeyGenerator implements IKeyGenerator {
      * @param array $params
      * @return string
      */
-    function fromCallableAndParams(callable $callable, array $params) {
+    function fromCallableAndParams($callable, array $params) {
         $key = self::KEY_PREFIX;
         if (is_array($callable)) {
             if (is_string($callable[0])) {

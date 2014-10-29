@@ -8,7 +8,7 @@ class Reflector {
      * @return \ReflectionFunctionAbstract
      * @throws \ReflectionException
      */
-    function getReflectionFunctionForCallable(callable $callable) {
+    function getReflectionFunctionForCallable($callable) {
         if (is_string($callable) && strpos($callable, '::') !== false) {
             $callable = explode('::', $callable);
         }

@@ -33,7 +33,7 @@ class CacheFilter implements \DC\Router\IGlobalFilter {
      * @return \phpDocumentor\Reflection\DocBlock\Tag[]
      * @throws \ReflectionException
      */
-    private function getTag(callable $callable, $tag) {
+    private function getTag($callable, $tag) {
         $reflection = $this->reflector->getReflectionFunctionForCallable($callable);
         $phpdoc = new \phpDocumentor\Reflection\DocBlock($reflection);
         $tags = $phpdoc->getTagsByName($tag);
@@ -47,7 +47,7 @@ class CacheFilter implements \DC\Router\IGlobalFilter {
      * @return string[]
      * @throws \ReflectionException
      */
-    private function removeParams(callable $callable, array $params) {
+    private function removeParams($callable, array $params) {
         $reflection = $this->reflector->getReflectionFunctionForCallable($callable);
         $phpdoc = new \phpDocumentor\Reflection\DocBlock($reflection);
         /** @var \DC\Router\OutputCache\Tag\CacheVaryTag[] $varies */
