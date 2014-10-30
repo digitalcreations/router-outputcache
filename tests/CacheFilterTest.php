@@ -3,7 +3,7 @@ class TestController extends \DC\Router\ControllerBase {
     /**
      * @route GET /foo/{x}/{y}
      * @cache +1 day
-     * @cache-vary $x
+     * @cache-exclude $y
      */
     function foo($x, $y) {
         return (string)($x + $y);
@@ -182,7 +182,7 @@ class CacheFilterTest extends PHPUnit_Framework_TestCase {
             ->willReturn('GET');
         $mockRequest
             ->method('getPath')
-            ->willReturn('/foo/1/2'); // this should equal 3, but cache says it is 4
+            ->willReturn('/foo/1/2'); // 1+2 should equal 3, but cache says it is 4
         $mockRequest
             ->method('getRequestParameters')
             ->willReturn([]);

@@ -49,7 +49,6 @@ class KittenController extends \DC\Router\ControllerBase {
   /**
    * @route GET /kitten/{id:int}
    * @cache +30 seconds
-   * @cache-vary $id
    */  
   function getKitten($id) {
     return new Kitten($id);
@@ -61,7 +60,7 @@ class KittenController extends \DC\Router\ControllerBase {
 
 You can specify the `@cache` tag on any route. The response will be cached Optionally you can specify a time interval (anything accepted by `strtotime`). By default it caches for 1 hour.
 
-## `@cache-vary`
+## `@cache-exclude`
 
 This enables you to target only some of the parameters to generate the cache key. By default all query parameters are used.
 
@@ -71,9 +70,55 @@ In the following case the `name` is not used in the lookup, but only to make the
   /**
    * @route GET /kittens/{name}/{id:int}
    * @cache
-   * @cache-vary $id
+   * @cache-exclude name
    */
   function getKitten($id, $name) {
      return new Kitten($id);
   }
 ```
+
+You can also exclude multiple parameters from the cache key with one tag:
+
+```
+@cache-exclude name tag
+```
+
+## `@cache-state`
+
+Sometimes you have hidden states in your system that deserve to be part of the cache key. For instance, a request to `/user/profile` could be cached, but is dependent on the internal state of your application. State providers are the solution here.
+
+For this to work, you will have to implement and register `\DC\Router\OutputCache\IStateProvider`. This has two simple methods, so here is a short implementation to vary the cache key based on the logged in user:
+
+```php
+class UserStateProvider implements \DC\Router\OutputCache\IStateProvider {
+  function getName() {
+     return "user";
+  }
+
+  function getCurrentState() {
+    return $_SESSION['user_id']; // or something more suitable
+  }
+}
+
+// where your IoC registration is, before registering the router:
+$container
+  ->register('\UserStateProvider')
+  ->to('\DC\Router\OutputCache\IStateProvider');
+```
+
+Now you can simply decorate any route with `@cache-state user`:
+
+```php
+class UserController extends \DC\Router\JsonController {
+  /**
+   * @route GET /user/profile
+   * @cache
+   * @cache-state user
+   */
+  function getProfile() {
+    return new \User($_SESSION['user_id']);
+  }
+}
+```
+
+Note that `@cache-state` can take multiple parameters in the same way that `@cache-exclude` can.

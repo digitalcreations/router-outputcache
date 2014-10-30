@@ -3,6 +3,10 @@
 namespace DC\Router\OutputCache;
 
 class CacheFilter implements \DC\Router\IGlobalFilter {
+    const TAG_CACHE = "cache";
+    const TAG_EXCLUDE = "cache-exclude";
+    const TAG_STATE = "cache-state";
+
     /**
      * @var \DC\Cache\ICache
      */
@@ -17,16 +21,31 @@ class CacheFilter implements \DC\Router\IGlobalFilter {
      */
     private $reflector;
 
-    function __construct(\DC\Cache\ICache $cache, IKeyGenerator $keyGenerator = null)
+    /**
+     * @var ParameterPreparer
+     */
+    private $parameterPreparer;
+
+    /**
+     * @param \DC\Cache\ICache $cache
+     * @param $stateProviders array|\DC\Router\OutputCache\IStateProvider[]
+     * @param IKeyGenerator $keyGenerator
+     */
+    function __construct(\DC\Cache\ICache $cache, array $stateProviders = [], IKeyGenerator $keyGenerator = null)
     {
-        $this->cache = $cache;
-        $this->keyGenerator = isset($keyGenerator) ? $keyGenerator : new DefaultKeyGenerator();
         $this->reflector = new Reflector();
 
-        \phpDocumentor\Reflection\DocBlock\Tag::registerTagHandler("cache", '\DC\Router\OutputCache\Tag\CacheTag');
-        \phpDocumentor\Reflection\DocBlock\Tag::registerTagHandler("cache-vary", '\DC\Router\OutputCache\Tag\CacheVaryTag');
+        $this->cache = $cache;
+
+        $this->parameterPreparer = new ParameterPreparer($this->reflector, $stateProviders);
+        $this->keyGenerator = isset($keyGenerator) ? $keyGenerator : new DefaultKeyGenerator();
+
+        \phpDocumentor\Reflection\DocBlock\Tag::registerTagHandler(self::TAG_CACHE, '\DC\Router\OutputCache\Tag\CacheTag');
+        \phpDocumentor\Reflection\DocBlock\Tag::registerTagHandler(self::TAG_EXCLUDE, '\DC\Router\OutputCache\Tag\CacheParameterTag');
+        \phpDocumentor\Reflection\DocBlock\Tag::registerTagHandler(self::TAG_STATE, '\DC\Router\OutputCache\Tag\CacheParameterTag');
     }
 
+    //region Private helpers
     /**
      * @param callable $callable
      * @param $tag
@@ -40,42 +59,19 @@ class CacheFilter implements \DC\Router\IGlobalFilter {
         return count($tags) > 0 ? $tags[0] : null;
     }
 
-
-    /**
-     * @param callable $callable
-     * @param array $params
-     * @return string[]
-     * @throws \ReflectionException
-     */
-    private function removeParams($callable, array $params) {
-        $reflection = $this->reflector->getReflectionFunctionForCallable($callable);
-        $phpdoc = new \phpDocumentor\Reflection\DocBlock($reflection);
-        /** @var \DC\Router\OutputCache\Tag\CacheVaryTag[] $varies */
-        $varies = $phpdoc->getTagsByName("cache-vary");
-
-        if (count($varies) == 0) {
-            return $params;
-        }
-
-        $allowed = [];
-        foreach ($varies as $vary) {
-            $allowed = array_merge($allowed, $vary->getParameters());
-        }
-        $allowed = array_flip($allowed);
-        return array_intersect_key($params, $allowed);
-    }
-
     private function keyFromRouteAndParams(\DC\Router\IRoute $route, array $params, &$expires) {
         $callable = $route->getCallable();
         /** @var \DC\Router\OutputCache\Tag\CacheTag $tag */
-        $tag = $this->getTag($callable, "cache");
+        $tag = $this->getTag($callable, self::TAG_CACHE);
         if ($tag) {
             $expires = $tag->getExpiry();
-            $params = $this->removeParams($callable, $params);
+            $params = $this->parameterPreparer->prepareParameters($callable, $params);
             return $this->keyGenerator->fromCallableAndParams($callable, $params);
         }
     }
+    //endregion
 
+    //region ICacheFilter implementation
     /**
      * @inheritdoc
      */
@@ -116,4 +112,5 @@ class CacheFilter implements \DC\Router\IGlobalFilter {
             $this->cache->set($key, $response, $expires);
         }
     }
+    //endregion
 }

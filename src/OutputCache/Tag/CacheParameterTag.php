@@ -2,13 +2,13 @@
 
 namespace DC\Router\OutputCache\Tag;
 
-class CacheVaryTag extends \phpDocumentor\Reflection\DocBlock\Tag {
+class CacheParameterTag extends \phpDocumentor\Reflection\DocBlock\Tag {
     /**
      * @var string
      */
     private $parameters = [];
 
-    const REGEX_SPLIT = '/\W+/im';
+    const REGEX_SPLIT = '/[^a-zA-Z0-9_\x7f-\xff$]+/im';
 
     /**
      * From http://no2.php.net/language.variables.basics
