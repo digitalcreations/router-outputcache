@@ -28,7 +28,7 @@ class CacheFilter implements \DC\Router\IGlobalFilter {
 
     /**
      * @param \DC\Cache\ICache $cache
-     * @param $stateProviders array|\DC\Router\OutputCache\IStateProvider[]
+     * @param \DC\Router\OutputCache\IStateProvider[] $stateProviders
      * @param IKeyGenerator $keyGenerator
      */
     function __construct(\DC\Cache\ICache $cache, array $stateProviders = [], IKeyGenerator $keyGenerator = null)
